@@ -2,7 +2,7 @@ name: Auto Sync Fork
 
 on:
   schedule:
-    - cron: '* * * * *' # Chạy tự động vào lúc 00:00 (UTC) mỗi ngày
+    - cron: '0 0 */5 * *' # Chạy tự động vào lúc 00:00 (UTC) mỗi ngày
   workflow_dispatch: # Cho phép bạn bấm chạy thủ công nếu muốn
 
 jobs:
