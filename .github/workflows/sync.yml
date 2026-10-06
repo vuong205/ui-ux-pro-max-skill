@@ -1,0 +1,44 @@
+name: Auto Sync Fork
+#.github/workflows/sync.yml
+on:
+  schedule:
+    - cron: '0 0 */5 * *' 
+  push: 
+    paths:
+     - '.github/workflows/sync.yml'
+  workflow_dispatch: # Cho phép bạn bấm chạy thủ công nếu muốn
+
+jobs:
+  sync:
+    runs-on: ubuntu-slim 
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Tải toàn bộ lịch sử commit
+          token: ${{ secrets.SYNC_TOKEN }}
+      
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+      
+      - name: Sync with upstream
+        run: |
+          # Thêm repo gốc
+          git remote add upstream https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git
+          git fetch upstream
+          git checkout main
+          
+          # 2. Gộp code nhưng KHÔNG commit ngay (thêm || true để không văng lỗi nếu có xung đột nhỏ)
+          git merge upstream/main --no-commit --allow-unrelated-histories || true
+          
+          # 3. MAGIC HAPPENS HERE: Khôi phục toàn bộ thư mục workflows về nguyên bản của bạn.
+          # Lệnh này sẽ xóa bỏ mọi file workflow từ repo gốc bị dính vào và giữ nguyên file của bạn.
+          git restore --source=HEAD --staged --worktree .github/workflows/
+          
+          # 4. Lưu lại và đẩy lên nếu có thay đổi
+          if git commit -m "Auto sync từ upstream (đã giữ lại local workflows)"; then
+            git push origin main
+          else
+            echo "No changes to sync, skip push"
+          fi
